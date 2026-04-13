@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>VARIO · PWA</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #07070e;
+      --surface: #0d0d1a;
+      --panel: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --up: #00f5a0;
+      --up-dim: #00c47e;
+      --down: #ff4d6d;
+      --down-dim: #c22040;
+      --neutral: #3a3a5c;
+      --text: #e8e8f0;
+      --text-dim: #6060a0;
+      --accent: #7b61ff;
+      --warn: #ffb347;
+      --glow-up: 0 0 40px rgba(0,245,160,0.35);
+      --glow-down: 0 0 40px rgba(255,77,109,0.35);
+      --font-display: 'Orbitron', monospace;
+      --font-mono: 'Space Mono', monospace;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* FULLSCREEN */
+    #app {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: space-between;
+      padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 16px);
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(123,97,255,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,245,160,0.04) 0%, transparent 70%),
+        var(--bg);
+      transition: background 0.8s ease;
+    }
+    #app.rising {
+      background:
+        radial-gradient(ellipse 100% 60% at 50% 0%, rgba(0,245,160,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(0,245,160,0.04) 0%, transparent 70%),
+        var(--bg);
+    }
+    #app.sinking {
+      background:
+        radial-gradient(ellipse 100% 60% at 50% 100%, rgba(255,77,109,0.14) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255,77,109,0.04) 0%, transparent 70%),
+        var(--bg);
+    }
+
+    /* ---- TOP BAR ---- */
+    #topbar {
+      width: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 4px 0;
+      font-size: 10px; letter-spacing: 0.15em; color: var(--text-dim);
+      text-transform: uppercase;
+    }
+    #topbar .logo { font-family: var(--font-display); font-weight: 900; font-size: 13px; color: var(--accent); letter-spacing: 0.3em; }
+    #status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--neutral); display: inline-block; margin-right: 6px; transition: background 0.4s; }
+    #status-dot.active { background: var(--up); box-shadow: 0 0 8px var(--up); }
+    #status-dot.error { background: var(--down); box-shadow: 0 0 8px var(--down); }
+
+    /* ---- MAIN VARIO DISPLAY ---- */
+    #vario-core {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      width: 100%; gap: 8px;
+    }
+
+    /* Arc gauge */
+    #arc-wrap { position: relative; width: min(72vw, 320px); height: min(40vw, 180px); }
+    #arc-svg { width: 100%; height: 100%; overflow: visible; }
+    #gauge-needle { transition: transform 0.3s cubic-bezier(0.25,0.8,0.25,1); transform-origin: 50% 100%; transform: rotate(0deg); }
+
+    /* Big number */
+    #vms-wrap {
+      display: flex; align-items: flex-end; justify-content: center; gap: 10px;
+      line-height: 1;
+    }
+    #vms-value {
+      font-family: var(--font-display);
+      font-size: clamp(64px, 20vw, 120px);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      transition: color 0.4s, text-shadow 0.4s;
+      min-width: 3ch; text-align: right;
+    }
+    #vms-value.rising { color: var(--up); text-shadow: var(--glow-up); }
+    #vms-value.sinking { color: var(--down); text-shadow: var(--glow-down); }
+
+    #vms-unit {
+      font-family: var(--font-mono);
+      font-size: clamp(14px, 4vw, 22px);
+      color: var(--text-dim); padding-bottom: 16px;
+      letter-spacing: 0.1em;
+    }
+
+    /* Arrow indicator */
+    #arrow {
+      font-size: clamp(28px, 10vw, 56px);
+      line-height: 1;
+      transition: transform 0.3s, opacity 0.3s;
+      opacity: 0.3;
+    }
+    #arrow.rising { opacity: 1; color: var(--up); transform: scaleY(1); }
+    #arrow.sinking { opacity: 1; color: var(--down); transform: scaleY(-1); }
+
+    /* ---- SECONDARY METRICS ---- */
+    #metrics {
+      width: 100%;
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .metric-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 8px;
+      text-align: center;
+    }
+    .metric-label { font-size: 9px; letter-spacing: 0.15em; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+    .metric-value { font-family: var(--font-display); font-size: clamp(16px, 5vw, 26px); font-weight: 700; color: var(--text); }
+    .metric-unit { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+
+    /* ---- BOTTOM CONTROLS ---- */
+    #bottom {
+      width: 100%;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    #ctrl-row {
+      display: flex; gap: 10px; width: 100%;
+    }
+
+    .btn {
+      flex: 1;
+      height: 48px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn.primary { background: rgba(123,97,255,0.18); border-color: var(--accent); color: var(--accent); }
+    .btn.danger { background: rgba(255,77,109,0.12); border-color: var(--down-dim); color: var(--down); }
+    .btn.success { background: rgba(0,245,160,0.12); border-color: var(--up-dim); color: var(--up); }
+    .btn:disabled { opacity: 0.35; pointer-events: none; }
+    .btn.active-toggle { background: rgba(0,245,160,0.2); border-color: var(--up); color: var(--up); }
+
+    /* ---- WALLET PANEL (modal overlay) ---- */
+    #wallet-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(7,7,14,0.92);
+      backdrop-filter: blur(16px);
+      display: flex; align-items: flex-end; justify-content: center;
+      padding: 0 0 env(safe-area-inset-bottom, 16px);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    #wallet-overlay.open { opacity: 1; pointer-events: all; }
+
+    #wallet-sheet {
+      width: 100%; max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 20px 20px 0 0;
+      padding: 28px 20px 24px;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+    }
+    #wallet-overlay.open #wallet-sheet { transform: translateY(0); }
+
+    .sheet-title {
+      font-family: var(--font-display); font-weight: 700;
+      font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .sheet-title::before { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .sheet-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .wallet-info {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px; margin-bottom: 12px;
+      font-size: 11px; color: var(--text-dim); line-height: 1.8;
+      word-break: break-all;
+    }
+    .wallet-info span { color: var(--text); font-weight: 700; }
+    .wallet-info .addr { font-size: 10px; color: var(--accent); letter-spacing: 0.05em; }
+
+    .sheet-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .sheet-input {
+      flex: 1; height: 44px;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: var(--font-mono);
+      font-size: 12px; padding: 0 14px; outline: none;
+      transition: border-color 0.2s;
+    }
+    .sheet-input:focus { border-color: var(--accent); }
+    .sheet-input::placeholder { color: var(--text-dim); }
+
+    .sheet-hint { font-size: 9px; color: var(--text-dim); margin-bottom: 12px; line-height: 1.6; }
+    .sheet-hint b { color: var(--warn); }
+
+    #data-log {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px; margin-top: 12px;
+      max-height: 120px; overflow-y: auto;
+      font-size: 10px; color: var(--text-dim); line-height: 1.8;
+    }
+    #data-log .log-entry { border-bottom: 1px solid var(--border); padding: 3px 0; }
+    #data-log .log-entry:last-child { border-bottom: none; }
+
+    /* ---- TOAST ---- */
+    #toast {
+      position: fixed; bottom: calc(env(safe-area-inset-bottom, 16px) + 80px);
+      left: 50%; transform: translateX(-50%) translateY(20px);
+      background: rgba(20,20,40,0.95); border: 1px solid var(--border);
+      border-radius: 100px; padding: 10px 20px;
+      font-size: 11px; letter-spacing: 0.1em; color: var(--text);
+      opacity: 0; transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none; white-space: nowrap; z-index: 200;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ---- VOLUME SLIDER ---- */
+    #vol-row { display: flex; align-items: center; gap: 10px; padding: 0 2px; }
+    #vol-row label { font-size: 9px; color: var(--text-dim); letter-spacing: 0.12em; text-transform: uppercase; min-width: 32px; }
+    input[type=range] {
+      flex: 1; -webkit-appearance: none; height: 3px;
+      background: var(--border); border-radius: 99px; outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px;
+      border-radius: 50%; background: var(--accent); cursor: pointer;
+      box-shadow: 0 0 10px rgba(123,97,255,0.5);
+    }
+    #vol-val { font-size: 10px; color: var(--accent); min-width: 28px; text-align: right; }
+
+    /* ---- FULLSCREEN BTN ---- */
+    #fs-btn { position: fixed; top: calc(env(safe-area-inset-top, 12px) + 4px); right: 16px; z-index: 50; }
+    #fs-btn .btn { width: 40px; flex: none; border-radius: 10px; }
+
+    /* Noise overlay */
+    body::after {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      opacity: 0.4;
+    }
+
+    /* Pulse ring */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+    #pulse {
+      position: absolute; width: 80%; aspect-ratio: 1;
+      border-radius: 50%; pointer-events: none;
+      border: 2px solid var(--up);
+      opacity: 0; z-index: -1;
+    }
+    #pulse.beat { animation: pulse-ring 0.6s ease-out; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <span class="logo">VARIO</span>
+    <span><span id="status-dot"></span><span id="status-txt">sin sensor</span></span>
+    <span id="baro-raw">— hPa</span>
+  </div>
+
+  <!-- MAIN DISPLAY -->
+  <div id="vario-core">
+
+    <!-- Arc gauge SVG -->
+    <div id="arc-wrap">
+      <svg id="arc-svg" viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background arc -->
+        <path d="M 20 160 A 140 140 0 0 1 300 160" stroke="rgba(255,255,255,0.06)" stroke-width="8" stroke-linecap="round" fill="none"/>
+        <!-- Colored arc (dynamic) -->
+        <path id="arc-fill" d="M 20 160 A 140 140 0 0 1 300 160" stroke="rgba(255,255,255,0.06)" stroke-width="8" stroke-linecap="round" fill="none" stroke-dasharray="440" stroke-dashoffset="440"/>
+        <!-- Tick marks -->
+        <g id="arc-ticks"></g>
+        <!-- Needle -->
+        <g id="gauge-needle">
+          <line x1="160" y1="160" x2="160" y2="30" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.9"/>
+          <circle cx="160" cy="160" r="8" fill="var(--accent)" opacity="0.9"/>
+          <circle cx="160" cy="160" r="3" fill="white"/>
+        </g>
+        <!-- Labels -->
+        <text x="16" y="178" fill="rgba(255,255,255,0.3)" font-size="11" font-family="monospace">-5</text>
+        <text x="144" y="22" fill="rgba(255,255,255,0.3)" font-size="11" font-family="monospace" text-anchor="middle">0</text>
+        <text x="296" y="178" fill="rgba(255,255,255,0.3)" font-size="11" font-family="monospace" text-anchor="end">+5</text>
+      </svg>
+    </div>
+
+    <div style="position:relative; display:flex; flex-direction:column; align-items:center; gap:6px;">
+      <div id="pulse"></div>
+      <div id="arrow">↑</div>
+      <div id="vms-wrap">
+        <div id="vms-value">0.0</div>
+        <div id="vms-unit">m/s</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECONDARY METRICS -->
+  <div id="metrics">
+    <div class="metric-card">
+      <div class="metric-label">Altitud</div>
+      <div class="metric-value" id="alt-val">—</div>
+      <div class="metric-unit">metros</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Presión</div>
+      <div class="metric-value" id="pres-val">—</div>
+      <div class="metric-unit">hPa</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Temp</div>
+      <div class="metric-value" id="temp-val">—</div>
+      <div class="metric-unit">°C</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div id="bottom">
+    <div id="vol-row">
+      <label>Vol</label>
+      <input type="range" id="vol-slider" min="0" max="1" step="0.05" value="0.7" />
+      <span id="vol-val">70%</span>
+    </div>
+    <div id="ctrl-row">
+      <button class="btn primary" id="start-btn">▶ Iniciar</button>
+      <button class="btn" id="mute-btn">🔊</button>
+      <button class="btn" id="wallet-btn">🔐 Wallet</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- WALLET OVERLAY -->
+<div id="wallet-overlay">
+  <div id="wallet-sheet">
+    <div class="sheet-title">Autocustodia</div>
+    <div id="wallet-info-box" class="wallet-info" style="display:none"></div>
+
+    <div id="create-section">
+      <p class="sheet-hint">Genera o importa una wallet ETH. Tu clave encripta los datos de vuelo en este dispositivo.</p>
+      <div class="sheet-row">
+        <button class="btn success" id="gen-wallet-btn" style="flex:1">+ Generar wallet</button>
+        <button class="btn" id="import-wallet-btn" style="flex:1">↓ Importar</button>
+      </div>
+      <div id="import-section" style="display:none; margin-top:8px;">
+        <input class="sheet-input" type="password" id="pk-input" placeholder="Clave privada 0x…" />
+        <p class="sheet-hint" style="margin-top:6px;"><b>⚠</b> Nunca compartas tu clave privada.</p>
+        <button class="btn primary" id="confirm-import-btn" style="width:100%;margin-top:4px;">Confirmar importación</button>
+      </div>
+    </div>
+
+    <div id="wallet-actions" style="display:none; margin-top:4px;">
+      <div class="sheet-row">
+        <button class="btn success" id="save-flight-btn" style="flex:1">💾 Guardar vuelo</button>
+        <button class="btn" id="load-flight-btn" style="flex:1">📂 Cargar vuelo</button>
+      </div>
+      <div class="sheet-row" style="margin-top:4px;">
+        <button class="btn danger" id="remove-wallet-btn" style="flex:1">🗑 Eliminar wallet</button>
+      </div>
+      <div id="data-log"></div>
+    </div>
+
+    <div class="sheet-row" style="margin-top:12px;">
+      <button class="btn" id="close-sheet-btn" style="flex:1">✕ Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ETHERS v6 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.9.0/ethers.umd.min.js"></script>
+<script src="app.js"></script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  }
+</script>
+</body>
+</html>

@@ -11,3 +11,34 @@
 
 #!.yarn/cache
 .pnp.*
+node_modules/
+.DS_Store
+.firebase/
+.firebaserc
+.parcel-cache/
+
+# Build output
+dist/
+
+# Android build artifacts (muy pesados, se regeneran con Android Studio)
+android/app/build/
+android/.gradle/
+android/build/
+android/local.properties
+
+# APKs — subirlos vía GitHub Releases, no al repo
+*.apk
+*.aab
+
+# Keystore & signing secrets (¡nunca commitear!)
+*.keystore
+*.jks
+*.p12
+release.properties
+
+# Editor / OS
+.vscode/
+.idea/
+*.suo
+*.swp
+Thumbs.db

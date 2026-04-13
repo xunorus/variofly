@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">varioDapp</string>
+    <string name="title_activity_main">varioDapp</string>
+    <string name="package_name">com.variofly.app</string>
+    <string name="custom_url_scheme">com.variofly.app</string>
+</resources>

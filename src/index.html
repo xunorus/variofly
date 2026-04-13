@@ -1,0 +1,703 @@
+<!-- APK link points to GitHub Releases. Firebase Spark plan blocks .apk uploads. -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07070e" />
+  <title>VarioFly · Barómetro Nativo para Parapente</title>
+  <meta name="description" content="VarioFly es el variómetro de precisión para parapentistas. Accede al barómetro hardware de tu Android. Descarga el APK gratis." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #07070e;
+      --surface:  #0d0d1a;
+      --panel:    rgba(255,255,255,0.04);
+      --border:   rgba(255,255,255,0.08);
+      --up:       #00f5a0;
+      --up-dim:   #00c47e;
+      --down:     #ff4d6d;
+      --accent:   #7b61ff;
+      --accent2:  #5b8fff;
+      --text:     #e8e8f0;
+      --text-dim: #8585b0;
+      --warn:     #ffb347;
+      --font-display: 'Orbitron', monospace;
+      --font-mono:    'Space Mono', monospace;
+      --font-body:    'Inter', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ========== NOISE LAYER ========== */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.5;
+    }
+
+    /* ========== NAV ========== */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 32px;
+      background: rgba(7,7,14,0.7);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .nav-logo {
+      font-family: var(--font-display);
+      font-weight: 900; font-size: 18px;
+      letter-spacing: 0.3em; color: var(--accent);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--up); }
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a {
+      font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-dim); text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff !important; padding: 8px 20px; border-radius: 8px;
+      font-weight: 600 !important; letter-spacing: 0.08em !important;
+      box-shadow: 0 4px 20px rgba(123,97,255,0.4);
+      transition: transform 0.2s, box-shadow 0.2s !important;
+    }
+    .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(123,97,255,0.55) !important; }
+
+    /* ========== HERO ========== */
+    #hero {
+      position: relative; min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 120px 24px 80px;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(123,97,255,0.18) 0%, transparent 65%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,245,160,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 20% 70%, rgba(91,143,255,0.06) 0%, transparent 60%),
+        var(--bg);
+    }
+    .hero-img-wrap {
+      position: relative; z-index: 2;
+      width: min(90%, 700px); margin-bottom: 40px;
+      border-radius: 24px; overflow: hidden;
+      border: 1px solid rgba(123,97,255,0.25);
+      box-shadow:
+        0 0 0 1px rgba(123,97,255,0.1),
+        0 30px 80px rgba(0,0,0,0.7),
+        0 0 120px rgba(123,97,255,0.12);
+    }
+    .hero-img-wrap img {
+      width: 100%; display: block;
+      transform: scale(1.01);
+      transition: transform 8s ease;
+    }
+    .hero-img-wrap:hover img { transform: scale(1.05); }
+    .hero-badge {
+      position: absolute; top: 16px; left: 16px;
+      background: rgba(0,245,160,0.15);
+      border: 1px solid rgba(0,245,160,0.4);
+      border-radius: 100px; padding: 4px 14px;
+      font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--up); font-family: var(--font-mono);
+    }
+
+    .hero-content { position: relative; z-index: 2; max-width: 720px; }
+    .hero-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px; letter-spacing: 0.25em; text-transform: uppercase;
+      color: var(--up); margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+    }
+    .hero-eyebrow::before, .hero-eyebrow::after {
+      content: ''; flex: 1; max-width: 60px; height: 1px; background: rgba(0,245,160,0.3);
+    }
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 8vw, 72px);
+      font-weight: 900; line-height: 1.05; letter-spacing: -0.02em;
+      margin-bottom: 20px;
+    }
+    h1 .accent { color: var(--accent); }
+    h1 .green  { color: var(--up); }
+
+    .hero-sub {
+      font-size: clamp(15px, 2.5vw, 18px);
+      color: var(--text-dim); max-width: 540px; margin: 0 auto 40px;
+      line-height: 1.7; font-weight: 300;
+    }
+
+    .hero-actions {
+      display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    }
+    .btn-hero-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, #7b61ff 0%, #5b8fff 100%);
+      color: #fff; font-family: var(--font-mono);
+      font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 16px 32px; border-radius: 14px; border: none;
+      text-decoration: none; cursor: pointer;
+      box-shadow: 0 8px 32px rgba(123,97,255,0.5), 0 0 0 1px rgba(123,97,255,0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+      font-weight: 700;
+    }
+    .btn-hero-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 40px rgba(123,97,255,0.65), 0 0 60px rgba(123,97,255,0.2);
+    }
+    .btn-hero-primary:active { transform: translateY(0); }
+    .btn-hero-primary .icon { font-size: 20px; }
+
+    .btn-hero-secondary {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--text); font-family: var(--font-mono);
+      font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 16px 28px; border-radius: 14px;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .btn-hero-secondary:hover {
+      background: rgba(255,255,255,0.09);
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .apk-meta {
+      margin-top: 16px;
+      font-size: 11px; color: var(--text-dim);
+      font-family: var(--font-mono); letter-spacing: 0.06em;
+    }
+    .apk-meta span { color: var(--up); }
+
+    /* pulsar dot */
+    @keyframes pulsar {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,245,160,0.5); }
+      50% { box-shadow: 0 0 0 6px rgba(0,245,160,0); }
+    }
+    .live-dot {
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; background: var(--up);
+      animation: pulsar 1.5s ease infinite; vertical-align: middle; margin-right: 6px;
+    }
+
+    /* ========== HOW TO INSTALL ========== */
+    #install {
+      position: relative; z-index: 1;
+      padding: 100px 24px;
+      background: linear-gradient(180deg, transparent 0%, rgba(13,13,26,0.6) 30%, rgba(13,13,26,0.6) 70%, transparent 100%);
+    }
+    .section-label {
+      text-align: center;
+      font-family: var(--font-mono); font-size: 11px;
+      letter-spacing: 0.25em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 12px;
+    }
+    h2 {
+      font-family: var(--font-display);
+      text-align: center; font-size: clamp(26px, 5vw, 44px);
+      margin-bottom: 12px; font-weight: 900;
+    }
+    .section-sub {
+      text-align: center; color: var(--text-dim);
+      font-size: 15px; max-width: 500px; margin: 0 auto 60px;
+      line-height: 1.7;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px; max-width: 900px; margin: 0 auto;
+    }
+    .step-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px; padding: 28px 24px;
+      position: relative; overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .step-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(123,97,255,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .step-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(123,97,255,0.15);
+    }
+    .step-num {
+      font-family: var(--font-display); font-size: 40px; font-weight: 900;
+      color: rgba(123,97,255,0.15); line-height: 1; margin-bottom: 12px;
+    }
+    .step-icon { font-size: 28px; margin-bottom: 12px; }
+    .step-title {
+      font-family: var(--font-display); font-size: 13px;
+      font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text); margin-bottom: 8px;
+    }
+    .step-desc { font-size: 13px; color: var(--text-dim); line-height: 1.7; }
+    .step-desc code {
+      background: rgba(123,97,255,0.15); color: var(--accent);
+      padding: 1px 6px; border-radius: 4px; font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    /* ========== FEATURES ========== */
+    #features {
+      position: relative; z-index: 1;
+      padding: 80px 24px 100px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px; max-width: 1100px; margin: 0 auto;
+    }
+    .feat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px; padding: 28px;
+      transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+      position: relative; overflow: hidden;
+    }
+    .feat-card::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(123,97,255,0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .feat-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(123,97,255,0.25);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 60px rgba(123,97,255,0.08);
+    }
+    .feat-card.green-glow:hover {
+      border-color: rgba(0,245,160,0.25);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 60px rgba(0,245,160,0.08);
+    }
+    .feat-icon { font-size: 32px; margin-bottom: 16px; }
+    .feat-title {
+      font-family: var(--font-display); font-size: 13px;
+      font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text); margin-bottom: 10px;
+    }
+    .feat-desc { font-size: 13px; color: var(--text-dim); line-height: 1.75; }
+    .feat-tag {
+      display: inline-block; margin-top: 12px;
+      font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+      font-family: var(--font-mono);
+      padding: 3px 10px; border-radius: 100px;
+      background: rgba(0,245,160,0.1); color: var(--up);
+      border: 1px solid rgba(0,245,160,0.2);
+    }
+    .feat-tag.purple {
+      background: rgba(123,97,255,0.1); color: var(--accent);
+      border-color: rgba(123,97,255,0.2);
+    }
+
+    /* ========== CTA BOTTOM ========== */
+    #cta-bottom {
+      position: relative; z-index: 1;
+      padding: 80px 24px 120px; text-align: center;
+      background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(123,97,255,0.1) 0%, transparent 70%);
+    }
+    .cta-box {
+      max-width: 600px; margin: 0 auto;
+      background: rgba(13,13,26,0.8);
+      border: 1px solid rgba(123,97,255,0.2);
+      border-radius: 24px; padding: 56px 40px;
+      box-shadow: 0 0 80px rgba(123,97,255,0.1), 0 30px 80px rgba(0,0,0,0.5);
+    }
+    .cta-box h2 { font-size: clamp(24px, 5vw, 38px); margin-bottom: 12px; }
+    .cta-box p { color: var(--text-dim); margin-bottom: 36px; font-size: 15px; max-width: 400px; margin-left: auto; margin-right: auto; line-height: 1.7; }
+
+    .download-btn-big {
+      display: inline-flex; align-items: center; gap: 14px;
+      background: linear-gradient(135deg, #00f5a0 0%, #00c47e 100%);
+      color: #07070e; font-weight: 800;
+      font-family: var(--font-display); font-size: 14px;
+      letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 20px 40px; border-radius: 16px;
+      text-decoration: none; border: none; cursor: pointer;
+      box-shadow: 0 8px 40px rgba(0,245,160,0.4), 0 0 0 1px rgba(0,245,160,0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .download-btn-big:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 56px rgba(0,245,160,0.5), 0 0 0 1px rgba(0,245,160,0.4);
+    }
+    .download-btn-big:active { transform: translateY(0); }
+    .download-btn-big .dicon { font-size: 24px; }
+
+    .cta-note {
+      margin-top: 20px; font-size: 11px;
+      color: var(--text-dim); font-family: var(--font-mono);
+      letter-spacing: 0.08em; line-height: 2;
+    }
+    .cta-note a { color: var(--accent); text-decoration: none; }
+    .cta-note a:hover { text-decoration: underline; }
+
+    /* ========== SPECS ========== */
+    #specs {
+      position: relative; z-index: 1;
+      padding: 80px 24px;
+    }
+    .specs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px; max-width: 900px; margin: 0 auto;
+    }
+    .spec-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px 20px; text-align: center;
+    }
+    .spec-val {
+      font-family: var(--font-display); font-size: 28px; font-weight: 900;
+      color: var(--up); margin-bottom: 4px;
+    }
+    .spec-label {
+      font-size: 11px; color: var(--text-dim);
+      letter-spacing: 0.12em; text-transform: uppercase;
+    }
+
+    /* ========== FOOTER ========== */
+    footer {
+      position: relative; z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .footer-logo {
+      font-family: var(--font-display); font-weight: 900;
+      font-size: 14px; letter-spacing: 0.3em; color: var(--accent);
+    }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a {
+      font-size: 11px; color: var(--text-dim); text-decoration: none;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--text); }
+    footer p { font-size: 11px; color: var(--text-dim); }
+
+    /* ========== FLOATING PARTICLES ========== */
+    .particles {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
+    }
+    .particle {
+      position: absolute; border-radius: 50%;
+      background: radial-gradient(circle, rgba(123,97,255,0.6) 0%, transparent 70%);
+      animation: float linear infinite;
+    }
+    @keyframes float {
+      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.3; }
+      100% { transform: translateY(-20vh) scale(1.2); opacity: 0; }
+    }
+
+    /* ========== ANDROID WARNING ========== */
+    .android-warning {
+      background: rgba(255,179,71,0.08);
+      border: 1px solid rgba(255,179,71,0.25);
+      border-radius: 12px; padding: 16px 20px;
+      font-size: 12px; color: var(--warn);
+      font-family: var(--font-mono); letter-spacing: 0.05em;
+      line-height: 1.8; margin-top: 28px; text-align: left;
+      max-width: 480px; margin-left: auto; margin-right: auto;
+    }
+    .android-warning strong { color: #ffd080; }
+
+    /* ========== SCROLL INDICATOR ========== */
+    @keyframes bounce-y {
+      0%, 100% { transform: translateY(0); opacity: 0.6; }
+      50% { transform: translateY(8px); opacity: 1; }
+    }
+    .scroll-hint {
+      position: absolute; bottom: 32px; left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px; letter-spacing: 0.15em; color: var(--text-dim);
+      font-family: var(--font-mono); text-transform: uppercase;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      animation: bounce-y 2s ease infinite;
+    }
+
+    /* ========== RESPONSIVE ========== */
+    @media (max-width: 640px) {
+      nav { padding: 12px 16px; }
+      .nav-links .nav-hide-mobile { display: none; }
+      .cta-box { padding: 36px 20px; }
+      footer { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- PARTICLES -->
+<div class="particles" id="particles"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">VARIO<span>FLY</span></a>
+  <div class="nav-links">
+    <a href="#features" class="nav-hide-mobile">Características</a>
+    <a href="#install" class="nav-hide-mobile">Instalación</a>
+    <a href="https://github.com/xunorus/varioDapp/releases/latest/download/variofly.apk" target="_blank" rel="noopener" id="nav-download-btn" class="nav-cta">⬇ Descargar APK</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+
+  <div class="hero-img-wrap">
+    <span class="hero-badge"><span class="live-dot"></span>BARÓMETRO ACTIVO</span>
+    <img src="hero.png" alt="VarioFly app - variometro para parapente" loading="eager" />
+  </div>
+
+  <div class="hero-content">
+    <p class="hero-eyebrow">Parapente · Barómetro Nativo · Android</p>
+    <h1>El <span class="accent">variómetro</span><br>que realmente<br><span class="green">vuela contigo</span></h1>
+    <p class="hero-sub">
+      VarioFly accede directamente al sensor barométrico de hardware de tu Android.
+      Sin browser, sin restricciones. Precisión real para vuelo real.
+    </p>
+
+    <div class="hero-actions">
+      <a href="https://github.com/xunorus/varioDapp/releases/latest/download/variofly.apk" target="_blank" rel="noopener" id="hero-download-btn" class="btn-hero-primary">
+        <span class="icon">⬇</span>
+        Descargar APK gratis
+      </a>
+      <a href="#install" class="btn-hero-secondary">
+        ¿Cómo instalar?
+      </a>
+    </div>
+
+    <p class="apk-meta">
+      v1.0 &nbsp;·&nbsp; <span>Android 7+</span> &nbsp;·&nbsp; 7.9 MB &nbsp;·&nbsp; Libre &amp; Open Source
+    </p>
+
+    <div class="android-warning">
+      <strong>⚠ Instalación manual requerida</strong><br>
+      Esta app no está en Play Store. Deberás habilitar <strong>«Instalar apps de fuentes desconocidas»</strong> en ajustes de Android antes de instalar el .apk.
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll</span><span>▼</span>
+  </div>
+</section>
+
+<!-- HOW TO INSTALL -->
+<section id="install">
+  <p class="section-label">Guía de instalación</p>
+  <h2>En <span style="color:var(--up)">4 pasos</span> en vuelo</h2>
+  <p class="section-sub">Nada de cuentas, nada de Play Store. Solo descargá, instalá y volá.</p>
+
+  <div class="steps">
+    <div class="step-card">
+      <div class="step-num">01</div>
+      <div class="step-icon">⬇</div>
+      <div class="step-title">Descargá el APK</div>
+      <div class="step-desc">Tocá el botón de descarga. El archivo <code>variofly.apk</code> se guardará en tu carpeta de Descargas.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">02</div>
+      <div class="step-icon">🔓</div>
+      <div class="step-title">Habilitá fuentes externas</div>
+      <div class="step-desc">Andá a <code>Ajustes → Seguridad</code> y activá <code>Fuentes desconocidas</code> o <code>Instalar apps desconocidas</code>.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">03</div>
+      <div class="step-icon">📂</div>
+      <div class="step-title">Abrí el archivo</div>
+      <div class="step-desc">Abrí Administrador de archivos → Descargas → toca <code>variofly.apk</code> → Instalar.</div>
+    </div>
+    <div class="step-card">
+      <div class="step-num">04</div>
+      <div class="step-icon">🪂</div>
+      <div class="step-title">¡A volar!</div>
+      <div class="step-desc">Abrí VarioFly, tocá <strong>Iniciar</strong>, y el barómetro de hardware empezará a leer presión en tiempo real.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SPECS -->
+<section id="specs">
+  <p class="section-label">Datos técnicos</p>
+  <h2>Precisión <span style="color:var(--accent)">real</span></h2>
+  <br>
+  <div class="specs-grid">
+    <div class="spec-card">
+      <div class="spec-val">±0.1</div>
+      <div class="spec-label">m/s precisión vario</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-val">10 Hz</div>
+      <div class="spec-label">Frecuencia de muestreo</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-val">7.9 MB</div>
+      <div class="spec-label">Tamaño del APK</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-val">0</div>
+      <div class="spec-label">Permisos de internet</div>
+    </div>
+    <div class="spec-card">
+      <div class="spec-val">API 24+</div>
+      <div class="spec-label">Android 7.0 mínimo</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+  <p class="section-label">Características</p>
+  <h2>Construido para <span style="color:var(--accent)">pilotos</span></h2>
+  <p class="section-sub">Todo lo que necesitás en el aire, nada que no necesitás.</p>
+
+  <div class="features-grid">
+    <div class="feat-card green-glow">
+      <div class="feat-icon">🌡️</div>
+      <div class="feat-title">Barómetro Hardware</div>
+      <div class="feat-desc">Acceso directo al sensor barométrico nativo del dispositivo vía Capacitor. Sin intermediarios de browser, sin restricciones de privacidad.</div>
+      <span class="feat-tag">Nativo</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📈</div>
+      <div class="feat-title">Variometría en Tiempo Real</div>
+      <div class="feat-desc">Velocidad vertical calculada a 10 Hz con filtro de Kalman. Gauge arc + indicador numérico grande para leer al vuelo de un vistazo.</div>
+      <span class="feat-tag purple">10 Hz</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔊</div>
+      <div class="feat-title">Audio Variométrico</div>
+      <div class="feat-desc">Tonos ascendentes al subir, graves descendentes en pérdida. Volumen ajustable con slider. Perfecto con auriculares bajo el casco.</div>
+      <span class="feat-tag">Audio</span>
+    </div>
+    <div class="feat-card green-glow">
+      <div class="feat-icon">⛰️</div>
+      <div class="feat-title">Altitud &amp; Presión</div>
+      <div class="feat-desc">Altímetro barométrico calculado desde la presión base, presión actual en hPa, y temperatura del sensor todo en un panel compacto.</div>
+      <span class="feat-tag">Métricas</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔐</div>
+      <div class="feat-title">Wallet de Vuelos</div>
+      <div class="feat-desc">Tus datos de vuelo encriptados con tu propia clave Ethereum. Auto-custodia total. Guardá y cargá vuelos sin servidores externos.</div>
+      <span class="feat-tag purple">Web3</span>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🌑</div>
+      <div class="feat-title">UI Dark Mode Premium</div>
+      <div class="feat-desc">Diseño dark de alto contraste optimizado para lectura al sol. Verde para subida, rojo para pérdida. Interface que no distrae del vuelo.</div>
+      <span class="feat-tag">UX</span>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BOTTOM -->
+<section id="cta-bottom">
+  <div class="cta-box">
+    <h2>¿Listo para <span style="color:var(--up)">volar</span>?</h2>
+    <p>Descargá VarioFly en tu Android ahora mismo. Sin Play Store, sin cuenta, sin tracking. Solo precisión.</p>
+
+    <a href="https://github.com/xunorus/varioDapp/releases/latest/download/variofly.apk" target="_blank" rel="noopener" id="cta-download-btn" class="download-btn-big">
+      <span class="dicon">⬇</span>
+      Descargar VarioFly APK
+    </a>
+
+    <p class="cta-note">
+      7.9 MB &nbsp;·&nbsp; Android 7+ &nbsp;·&nbsp; Libre &amp; Open Source<br>
+      Releases: <a href="https://github.com/xunorus/varioDapp/releases" target="_blank" rel="noopener">github.com/xunorus/varioDapp/releases</a><br>
+      ¿Preguntas? Abrí la app y usá el variometro 🪂
+    </p>
+
+    <div class="android-warning">
+      <strong>📌 Nota sobre seguridad Android</strong><br>
+      Al instalar desde fuera de Play Store, Android pedirá confirmación. Esto es normal para APKs directos.
+      Aceptá la advertencia y continúa con la instalación.
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">VARIO·FLY</div>
+  <div class="footer-links">
+    <a href="#features">Features</a>
+    <a href="#install">Instalar</a>
+    <a href="https://github.com/xunorus/varioDapp/releases/latest/download/variofly.apk" target="_blank" rel="noopener">APK</a>
+    <a href="app.html">App PWA</a>
+  </div>
+  <p>© 2026 VarioFly · Hecho con 🪂 para pilotos</p>
+</footer>
+
+<script>
+  // Particles
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 180 + 40;
+    p.style.cssText = `
+      width: ${size}px; height: ${size}px;
+      left: ${Math.random() * 100}%;
+      animation-duration: ${Math.random() * 18 + 12}s;
+      animation-delay: ${Math.random() * 14}s;
+      opacity: ${Math.random() * 0.06 + 0.01};
+    `;
+    if (Math.random() > 0.5) {
+      p.style.background = 'radial-gradient(circle, rgba(0,245,160,0.5) 0%, transparent 70%)';
+    }
+    container.appendChild(p);
+  }
+
+  // Track download clicks
+  document.querySelectorAll('[download]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      console.log('[VarioFly] APK download initiated');
+    });
+  });
+
+  // Animate cards on scroll
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.step-card, .feat-card, .spec-card').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+</script>
+
+</body>
+</html>

@@ -1,4 +1,20 @@
 {
   "name": "varioDapp",
-  "packageManager": "yarn@4.6.0"
+  "version": "1.0.4",
+  "packageManager": "yarn@4.6.0",
+  "scripts": {
+    "start": "parcel src/index.html --port 9753 --https",
+    "build": "parcel build src/index.html src/app.html --public-url ./"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capgo/capacitor-barometer": "^7.2.8",
+    "parcel": "^2.16.4"
+  },
+  "devDependencies": {
+    "@parcel/packager-raw-url": "2.16.4",
+    "@parcel/transformer-webmanifest": "2.16.4"
+  }
 }
